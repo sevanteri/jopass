@@ -9,21 +9,20 @@
    :attributes {"shorthand" :string
                 :app :janet1pass}})
 
-(defn get-home-path []
-  ((os/environ) "HOME"))
+(def home-path ((os/environ) "HOME"))
 
-(defn get-config-path []
+(def config-path
   (string (get (os/environ) "XDG_CONFIG_HOME"
-               (string (get-home-path) "/.config"))
+               (string home-path "/.config"))
           "/janet1pass"))
 
 (defn initialize
   "Create config dir at least"
   []
-  (os/mkdir (get-config-path)))
+  (os/mkdir config-path))
 
-(defn get-pw-file-path []
-  (string (get-config-path) "/pass.gpg"))
+(def pw-file-path
+  (string config-path "/pass.gpg"))
 
 (defn _save-token [shorthand token]
   (if (secret/save-password
@@ -100,9 +99,9 @@
 (defn get-titles [token shorthand]
   (sorted (map get-title (list-items token shorthand))))
 
-(defn get-op-config-path []
-  (string (get-home-path) "/.op/config"))
-(def opconfig (json/decode (slurp (get-op-config-path))))
+(def op-config-path
+  (string home-path "/.op/config"))
+(def opconfig (json/decode (slurp op-config-path)))
 (def latest_signin (opconfig "latest_signin"))
 (def shorthands (map (partial get-json-path "shorthand") (opconfig "accounts")))
 
@@ -114,7 +113,7 @@
   # TODO: change to process/run
   (if-with [f (file/popen
                 (string "gpg -qd "
-                        (get-pw-file-path)
+                        pw-file-path
                         " | op signin " shorthand
                         " --raw")
                 :r)]
@@ -171,6 +170,7 @@
                :help "Get username"}])
 
 (defn main [&]
+  (initialize)
   (let [args (argparse ;argparse-args)
         shorthand (or (args "account") latest_signin)
         arg (args :default)
