@@ -6,7 +6,8 @@
 (def- schema
   "libsecret schema to save the 1pw cli session token"
   {:name "org.janet1pass.sessiontoken"
-   :attributes {"shorthand" :string}})
+   :attributes {"shorthand" :string
+                :app :janet1pass}})
 
 (defn get-home-path []
   ((os/environ) "HOME"))
@@ -27,7 +28,8 @@
 (defn _save-token [shorthand token]
   (if (secret/save-password
         schema
-        @{"shorthand" shorthand}
+        @{"shorthand" shorthand
+          :app :janet1pass}
         :session
         (string "janet1pass " shorthand)
         token)
@@ -36,12 +38,14 @@
 (defn _get-token [shorthand]
   (secret/lookup-password
      schema
-     @{"shorthand" shorthand}))
+     @{"shorthand" shorthand
+       :app :janet1pass}))
 
 (defn remove-token [shorthand]
   (secret/remove-password
      schema
-     @{"shorthand" shorthand}))
+     @{"shorthand" shorthand
+       :app :janet1pass}))
 
 ## JSON utils
 (defn get-json-path
