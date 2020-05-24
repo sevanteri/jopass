@@ -75,10 +75,23 @@
 (defn list-items [token shorthand]
  (op token shorthand :list :items))
 
+(defn get-item [token shorthand name]
+  (op token shorthand :get :item name))
+
+(defn get-totp [token shorthand name]
+  (op token shorthand :get :totp name))
+
 (defn get-password [token shorthand name]
-  (->> (op token shorthand :get :item name)
+  (->> (get-item token shorthand name)
        (get-json-path "details.fields")
        (filter-jsonarray-by-path "designation" "password")
+       ((fn [arr] (get arr 0)))
+       (get-json-path "value")))
+
+(defn get-username [token shorthand name]
+  (->> (get-item token shorthand name)
+       (get-json-path "details.fields")
+       (filter-jsonarray-by-path "designation" "username")
        ((fn [arr] (get arr 0)))
        (get-json-path "value")))
 
@@ -135,7 +148,13 @@
    :default {:kind :option}
    "account" {:kind :option
               :short "a"
-              :help "Account shorthand"}])
+              :help "Account shorthand"}
+   "totp" {:kind :flag
+           :short "t"
+           :help "Get TOTP code"}
+   "username" {:kind :flag
+               :short "u"
+               :help "Get username"}])
 
 (defn- check-shorthand [shorthand]
   (if (nil? (find (partial = shorthand) shorthands))
@@ -152,9 +171,13 @@
 (defn main [&]
   (let [args (argparse ;argparse-args)
         shorthand (or (args "account") latest_signin)
-        arg (args :default)]
+        arg (args :default)
+        totp (args "totp")
+        username (args "username")]
     (check-shorthand shorthand)
     (let [token (get-token shorthand)]
       (cond
-        (not (nil? arg)) (print (get-password token shorthand arg))
+        (and totp arg) (print (get-totp token shorthand arg))
+        (and username arg) (print (get-username token shorthand arg))
+        arg (print (get-password token shorthand arg))
         (get-passwords token shorthand)))))
