@@ -47,6 +47,7 @@
      @{"shorthand" shorthand
        :app :janet1pass}))
 
+
 ## JSON utils
 (defn get-json-path
   "Get a dot separated path from a JSON object / Table"
@@ -63,6 +64,7 @@
     jsonarr))
 
 (def get-title (partial get-json-path "overview.title"))
+(def get-fields (partial get-json-path "details.fields"))
 (def only-passwords (partial filter-jsonarray-by-path "templateUuid" "001"))
 
 ## 1PW commands
@@ -83,18 +85,17 @@
 
 (defn get-password [token shorthand name]
   (->> (get-item token shorthand name)
-       (get-json-path "details.fields")
+       (get-fields)
        (filter-jsonarray-by-path "designation" "password")
-       ((fn [arr] (get arr 0)))
+       (first)
        (get-json-path "value")))
 
 (defn get-username [token shorthand name]
   (->> (get-item token shorthand name)
-       (get-json-path "details.fields")
+       (get-fields)
        (filter-jsonarray-by-path "designation" "username")
-       ((fn [arr] (get arr 0)))
+       (first)
        (get-json-path "value")))
-
 
 (defn get-titles [token shorthand]
   (sorted (map get-title (list-items token shorthand))))
@@ -110,6 +111,7 @@
   Returns a new session token`
   [&opt shorthand]
   (default shorthand latest_signin)
+  # TODO: change to process/run
   (if-with [f (file/popen
                 (string "gpg -qd "
                         (get-pw-file-path)
@@ -118,9 +120,9 @@
                 :r)]
     (string/trim (file/read f :line))))
 
-(defn check-token [token &opt shorthand]
+(defn check-token
   "Checks if the token is still valid. Returns the token or nil"
-  (default shorthand latest_signin)
+  [token shorthand]
   (if (zero? (process/run ["op" "get" "account" "--session" (or token "")]
                           :redirects [[stdout :null] [stderr :null]]))
     token
@@ -143,6 +145,18 @@
   (default shorthand latest_signin)
   (maybe-renew-token (_get-token shorthand) shorthand))
 
+(defn- check-shorthand [shorthand]
+  (if (nil? (find (partial = shorthand) shorthands))
+    (do (print (string "Account shorthand '" shorthand "' not found."))
+      (os/exit 1))))
+
+(defn get-passwords [token &opt shorthand]
+    (-?>> (list-items token shorthand)
+          (only-passwords)
+          (map get-title)
+          (sorted)
+          (map print)))
+
 (def- argparse-args
   ["Desc"
    :default {:kind :option}
@@ -155,18 +169,6 @@
    "username" {:kind :flag
                :short "u"
                :help "Get username"}])
-
-(defn- check-shorthand [shorthand]
-  (if (nil? (find (partial = shorthand) shorthands))
-    (do (print (string "Account shorthand '" shorthand "' not found."))
-      (os/exit 1))))
-
-(defn get-passwords [token &opt shorthand]
-    (-?>> (list-items token shorthand)
-          (only-passwords)
-          (map get-title)
-          (sorted)
-          (map print)))
 
 (defn main [&]
   (let [args (argparse ;argparse-args)
