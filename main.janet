@@ -138,14 +138,14 @@
   (op token shorthand :get :totp name))
 
 (defn get-password [token shorthand name]
-  (->> (get-item token shorthand name)
+  (-?>> (get-item token shorthand name)
        (get-fields)
        (filter-jsonarray-by-path "designation" "password")
        (first)
        (get-json-path "value")))
 
 (defn get-username [token shorthand name]
-  (->> (get-item token shorthand name)
+  (-?>> (get-item token shorthand name)
        (get-fields)
        (filter-jsonarray-by-path "designation" "username")
        (first)
