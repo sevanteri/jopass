@@ -6,16 +6,16 @@
 
 (def- schema
   "libsecret schema to save the 1pw cli session token"
-  {:name "org.janet1pass.sessiontoken"
+  {:name "jopass.sessiontoken"
    :attributes {"shorthand" :string
-                :app :janet1pass}})
+                :app :jopass}})
 
 (def home-path ((os/environ) "HOME"))
 
 (def config-path
   (string (get (os/environ) "XDG_CONFIG_HOME"
                (string home-path "/.config"))
-          "/janet1pass"))
+          "/jopass"))
 
 (defn initialize
   "Create config dir at least"
@@ -45,9 +45,9 @@
   (if (secret/save-password
         schema
         @{"shorthand" shorthand
-          :app :janet1pass}
+          :app :jopass}
         :session
-        (string "janet1pass " shorthand)
+        (string "jopass " shorthand)
         token)
     token))
 
@@ -55,13 +55,13 @@
   (secret/lookup-password
      schema
      @{"shorthand" shorthand
-       :app :janet1pass}))
+       :app :jopass}))
 
 (defn _remove-token [shorthand]
   (secret/remove-password
      schema
      @{"shorthand" shorthand
-       :app :janet1pass}))
+       :app :jopass}))
 
 
 (defn token-err? [str]
@@ -177,7 +177,10 @@
            :help "Get TOTP code"}
    "username" {:kind :flag
                :short "u"
-               :help "Get username"}])
+               :help "Get username"}
+   "copy" {:kind :flag
+           :short "c"
+           :help "Copy to clipboard"}])
 
 (defn main [&]
   (initialize)
