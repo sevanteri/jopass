@@ -17,11 +17,6 @@
                (string home-path "/.config"))
           "/jopass"))
 
-(defn initialize
-  "Create config dir at least"
-  []
-  (os/mkdir config-path))
-
 (def pw-file-path
   (string config-path "/pass.gpg"))
 
@@ -181,6 +176,17 @@
    "copy" {:kind :flag
            :short "c"
            :help "Copy to clipboard"}])
+
+(defn initialize
+  "Create config dir if not present. Guide first steps."
+  []
+  (os/mkdir config-path)
+  (if (nil? (os/stat pw-file-path))
+    (do
+      (print "Encrypt your 1Password with GPG and save it to " pw-file-path)
+      (os/exit 1)))
+  (if (nil? (os/stat last-use-path))
+    (spit last-use-path "")))
 
 (defn main [&]
   (initialize)
