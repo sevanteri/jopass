@@ -161,6 +161,25 @@
           (sorted)
           (map print)))
 
+(defn copy [pw]
+  (process/run ["xclip" "-selection" "clipboard"]
+    :redirects [[stdin pw]]))
+
+(defn type-it [pw]
+  (process/run ["xdotool" "type" "--clearmodifiers" "--file" "-"]
+    :redirects [[stdin (string/trim pw)]]))
+
+(defn initialize
+  "Create config dir if not present. Guide first steps."
+  []
+  (os/mkdir config-path)
+  (if (nil? (os/stat pw-file-path))
+    (do
+      (print "Encrypt your 1Password with GPG to " pw-file-path)
+      (os/exit 1)))
+  (if (nil? (os/stat last-use-path))
+    (spit last-use-path "")))
+
 (def- argparse-args
   ["Desc"
    :default {:kind :option}
@@ -175,30 +194,28 @@
                :help "Get username"}
    "copy" {:kind :flag
            :short "c"
-           :help "Copy to clipboard"}])
-
-(defn initialize
-  "Create config dir if not present. Guide first steps."
-  []
-  (os/mkdir config-path)
-  (if (nil? (os/stat pw-file-path))
-    (do
-      (print "Encrypt your 1Password with GPG and save it to " pw-file-path)
-      (os/exit 1)))
-  (if (nil? (os/stat last-use-path))
-    (spit last-use-path "")))
+           :help "Copy to clipboard"}
+   "type" {:kind :flag
+           :short "T"
+           :help "Type it"}])
 
 (defn main [&]
   (initialize)
   (let [args (argparse ;argparse-args)
         shorthand (or (args "account") latest-signin)
-        arg (args :default)
+        query (args :default)
         totp (args "totp")
-        username (args "username")]
+        username (args "username")
+        _copy (args "copy")
+        _type-it (args "type")]
     (check-shorthand shorthand)
-    (let [token (get-token shorthand)]
+    (let [token (get-token shorthand)
+          fun (cond
+                _copy copy
+                _type-it type-it
+                print)]
       (cond
-        (and totp arg) (print (get-totp token shorthand arg))
-        (and username arg) (print (get-username token shorthand arg))
-        arg (print (get-password token shorthand arg))
+        (and totp query) (fun (get-totp token shorthand query))
+        (and username query) (fun (get-username token shorthand query))
+        query (fun (get-password token shorthand query))
         (get-passwords token shorthand)))))
