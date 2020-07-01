@@ -4,13 +4,14 @@
 (import op)
 
 
-(defn copy [pw]
-  (process/run ["xclip" "-selection" "clipboard"]
-    :redirects [[stdin pw]]))
+(defn copy [pw &opt selection]
+  (default selection "clipboard")
+  (process/run ["xclip" "-selection" selection]
+    :redirects [[stdin (string/trim (string pw))]]))
 
 (defn type-it [pw]
   (process/run ["xdotool" "type" "--clearmodifiers" "--file" "-"]
-    :redirects [[stdin (string/trim pw)]]))
+    :redirects [[stdin (string/trim (string pw))]]))
 
 (defn initialize
   "Create config dir if not present. Guide first steps."
