@@ -46,7 +46,7 @@
 (defn main [&]
   (initialize)
   (let [args (or (argparse ;argparse-args) @{})
-        help (find (partial = "--help") (dyn :args))
+        help (find (fn [a] (or (= a "--help") (= a "-h"))) (dyn :args))
         shorthand (or (args "account") configs/latest-signin)
         query (args :default)
         totp (args "totp")
