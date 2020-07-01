@@ -201,7 +201,8 @@
 
 (defn main [&]
   (initialize)
-  (let [args (argparse ;argparse-args)
+  (let [args (or (argparse ;argparse-args) @{})
+        help (find (partial = "--help") (dyn :args))
         shorthand (or (args "account") latest-signin)
         query (args :default)
         totp (args "totp")
@@ -218,4 +219,4 @@
         (and totp query) (fun (get-totp token shorthand query))
         (and username query) (fun (get-username token shorthand query))
         query (fun (get-password token shorthand query))
-        (get-passwords token shorthand)))))
+        (not help) (get-passwords token shorthand)))))
