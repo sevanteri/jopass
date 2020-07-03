@@ -1,18 +1,19 @@
 
-MODULES = .janet_modules
-
-$(MODULES):
-	mkdir $(MODULES)
+MODULES := .janet_modules
+DEPS := $(addprefix $(MODULES)/,_secret.so _process.so json.so)
+MANIFESTS := $(MODULES)/.manifests
 
 .PHONY: all
 all: build
 
-.PHONY: path
-deps: $(MODULES)
+$(MODULES):
+	mkdir $(MODULES)
+
+$(MANIFESTS): $(MODULES)
 	JANET_PATH=$(MODULES) jpm deps
 
 .PHONY: build
-build: $(MODULES) deps
+build: $(MANIFESTS)
 	JANET_PATH=$(MODULES) jpm build
 
 
