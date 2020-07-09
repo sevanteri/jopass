@@ -25,7 +25,7 @@
     (spit configs/last-use-path "")))
 
 (def- argparse-args
-  ["Print/copy/type you 1Password passwords/usernames/TOTPs easily."
+  ["Print/copy/type your 1Password passwords/usernames/TOTPs easily."
    :default {:kind :option}
    "account" {:kind :option
               :short "a"
