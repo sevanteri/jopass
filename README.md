@@ -15,7 +15,7 @@ The help output shows all the options you can use:
 ```
 usage: jopass [option] ...
 
-Print/copy/type you 1Password passwords/usernames/TOTPs easily.
+Print/copy/type your 1Password passwords/usernames/TOTPs easily.
 
  Optional:
  -a, --account VALUE                         Account shorthand
