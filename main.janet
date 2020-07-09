@@ -53,14 +53,16 @@
         username (args "username")
         _copy (args "copy")
         _type-it (args "type")]
-    (op/check-shorthand shorthand)
-    (let [token (op/get-token shorthand)
-          fun (cond
-                _copy copy
-                _type-it type-it
-                print)]
-      (cond
-        (and totp query) (fun (op/get-totp token shorthand query))
-        (and username query) (fun (op/get-username token shorthand query))
-        query (fun (op/get-password token shorthand query))
-        (not help) (op/get-passwords token shorthand)))))
+    (if (not help)
+      (do
+        (op/check-shorthand shorthand)
+        (let [token (op/get-token shorthand)
+              fun (cond
+                    _copy copy
+                    _type-it type-it
+                    print)]
+          (cond
+            (and totp query) (fun (op/get-totp token shorthand query))
+            (and username query) (fun (op/get-username token shorthand query))
+            query (fun (op/get-password token shorthand query))
+            (op/get-passwords token shorthand)))))))
