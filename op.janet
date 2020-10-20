@@ -1,9 +1,9 @@
 ## 1Password cli wrappers
 (import process)
 (import json)
-(import json-utils :prefix "")
+(import json-utils :as "ju")
 (import configs :prefix "")
-(import secrets :prefix "")
+(import secrets :as "s")
 
 (defn token-err? [str]
   (truthy? (or (string/find "session expired" str)
@@ -31,13 +31,13 @@
     (if (< (last-use-duration) 1800) # 30min
       true
       (do
-        (_remove-token shorthand)
+        (s/remove-token shorthand)
         false))))
 
 (defn get-new-token-and-save [&opt shorthand]
   (default shorthand latest-signin)
   (let [token (signin shorthand)]
-    (_save-token shorthand token)
+    (s/save-token shorthand token)
     (os/touch last-use-path)
     token))
 
@@ -49,7 +49,7 @@
 
 (defn get-token [&opt shorthand]
   (default shorthand latest-signin)
-  (maybe-renew-token (_get-token shorthand) shorthand))
+  (maybe-renew-token (s/get-token shorthand) shorthand))
 
 (defn op [token shorthand & args]
   (def out @"")
@@ -68,7 +68,7 @@
 
 
 (defn list-items [token shorthand]
- (op token shorthand :list :items))
+ (op token shorthand :list :items "--categories=Password,Login"))
 
 (defn get-item [token shorthand name]
   (op token shorthand :get :item name))
@@ -77,21 +77,13 @@
   (op token shorthand :get :totp name))
 
 (defn get-password [token shorthand name]
-  (-?>> (get-item token shorthand name)
-       (get-fields)
-       (filter-jsonarray-by-path "designation" "password")
-       (first)
-       (get-json-path "value")))
+  (ju/get-password (get-item token shorthand name)))
 
 (defn get-username [token shorthand name]
-  (-?>> (get-item token shorthand name)
-       (get-fields)
-       (filter-jsonarray-by-path "designation" "username")
-       (first)
-       (get-json-path "value")))
+  (ju/username-from-fields (get-item token shorthand name)))
 
 (defn get-titles [token shorthand]
-  (sorted (map get-title (list-items token shorthand))))
+  (sorted (map ju/overview-title (list-items token shorthand))))
 
 (defn check-shorthand [shorthand]
   (if (nil? (find (partial = shorthand) shorthands))
@@ -100,7 +92,6 @@
 
 (defn get-passwords [token &opt shorthand]
     (-?>> (list-items token shorthand)
-          (only-passwords)
-          (map get-title)
+          (map ju/overview-title)
           (sorted)
           (map print)))
