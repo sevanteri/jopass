@@ -13,6 +13,9 @@
   (process/run ["xdotool" "type" "--clearmodifiers" "--file" "-"]
     :redirects [[stdin (string/trim (string pw))]]))
 
+(defn print-totp [x]
+  (printf "%06d" x))
+
 (defn initialize
   "Create config dir if not present. Guide first steps."
   []
@@ -60,7 +63,9 @@
               fun (cond
                     _copy copy
                     _type-it type-it
-                    print)]
+                    (cond
+                      totp print-totp
+                      print))]
           (cond
             (and totp query) (fun (op/get-totp token shorthand query))
             (and username query) (fun (op/get-username token shorthand query))
