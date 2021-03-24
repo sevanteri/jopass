@@ -1,7 +1,7 @@
 (import process)
 (import argparse :prefix "")
-(import configs)
-(import op)
+(import ./configs)
+(import ./op)
 
 
 (defn copy [pw &opt selection]

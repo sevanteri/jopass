@@ -1,9 +1,9 @@
 ## 1Password cli wrappers
 (import process)
 (import json)
-(import json-utils :as "ju")
-(import configs :prefix "")
-(import secrets :as "s")
+(import ./json-utils :as "ju")
+(import ./configs :prefix "")
+(import ./secrets :as "s")
 
 (defn token-err? [str]
   (truthy? (or (string/find "session expired" str)

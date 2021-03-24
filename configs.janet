@@ -1,5 +1,5 @@
 (import json)
-(import json-utils :prefix "")
+(import ./json-utils :prefix "")
 
 (def home-path ((os/environ) "HOME"))
 
