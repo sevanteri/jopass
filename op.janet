@@ -54,7 +54,7 @@
 (defn op [token shorthand & args]
   (def out @"")
   (def err @"")
-  (if (zero? (process/run ["op" "--session" token
+  (if (zero? (process/run ["op" "--cache --session" token
                            "--account" shorthand
                            ;args]
                           :redirects [[stderr err] [stdout out]]))
