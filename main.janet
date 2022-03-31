@@ -1,17 +1,24 @@
-(import process)
 (import argparse :prefix "")
 (import ./configs)
 (import ./op)
 
 
+(defn coerce-readable [buf-or-file]
+  (if (buffer? buf-or-file)
+    (let [[out_ in_] (os/pipe)]
+      (:write in_ buf-or-file)
+      (:close in_)
+      out_)
+    buf-or-file))
+
 (defn copy [pw &opt selection]
   (default selection "clipboard")
-  (process/run ["xclip" "-selection" selection]
-    :redirects [[stdin (string/trim (string pw))]]))
+  (os/execute ["xclip" "-selection" selection] :p
+              {:in (coerce-readable (string/trim (string pw)))}))
 
 (defn type-it [pw]
-  (process/run ["xdotool" "type" "--clearmodifiers" "--file" "-"]
-    :redirects [[stdin (string/trim (string pw))]]))
+  (os/execute ["xdotool" "type" "--clearmodifiers" "--file" "-"] :p
+              {:in (coerce-readable (string/trim (string pw)))}))
 
 (defn print-totp [x]
   (printf "%06d" x))
@@ -64,7 +71,6 @@
                     _copy copy
                     _type-it type-it
                     (cond
-                      totp print-totp
                       print))]
           (cond
             (and totp query) (fun (op/get-totp token shorthand query))

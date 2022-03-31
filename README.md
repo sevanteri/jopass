@@ -1,5 +1,5 @@
 # Jopass
-Wrapper for 1Password cli 1.x `op` written in Janet-lang
+Wrapper for 1Password cli 2.0 `op` written in Janet-lang
 
 Utilises GPG to decrypt the password for `op`.
 

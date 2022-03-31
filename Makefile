@@ -10,11 +10,11 @@ $(MODULES):
 	mkdir $(MODULES)
 
 $(MANIFESTS): $(MODULES)
-	JANET_PATH=$(MODULES) jpm deps
+	jpm -l deps
 
 .PHONY: build
 build: $(MANIFESTS)
-	JANET_PATH=$(MODULES) jpm build
+	jpm -l build
 
 
 .PHONY: clean

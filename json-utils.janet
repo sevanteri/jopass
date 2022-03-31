@@ -14,30 +14,28 @@
     jsonarr))
 
 (defn item-is-login [item]
-  (= (get-json-path "templateUuid" item) "001"))
+  (= (get-json-path "category" item) "LOGIN"))
 
 (defn item-is-password [item]
-  (= (get-json-path "templateUuid" item) "005"))
+  (= (get-json-path "category" item) "PASSWORD"))
 
 (defn item-has-password [item]
   (any? ((juxt item-is-password item-is-login) item)))
 
-(def overview-title (partial get-json-path "overview.title"))
-(def details-fields (partial get-json-path "details.fields"))
+(def item-title (partial get-json-path "title"))
+(def item-fields (partial get-json-path "fields"))
 (def details-password (partial get-json-path "details.password"))
 
-(defn field-by-designation [designation item]
+(defn field-value-by-purpose [purpose item]
   (-?>> item
-    (details-fields)
-    (filter-jsonarray-by-path "designation" designation)
+    (item-fields)
+    (filter-jsonarray-by-path "purpose" purpose)
     (first)
     (get-json-path "value")))
 
-(def password-from-fields (partial field-by-designation "password"))
-(def username-from-fields (partial field-by-designation "username"))
+(def password-from-fields (partial field-value-by-purpose "PASSWORD"))
+(def username-from-fields (partial field-value-by-purpose "USERNAME"))
 
-(defn get-password [item]
-  (cond
-    (item-is-password item) (details-password item)
-    (item-is-login item) (password-from-fields item)))
+(defn item-password [item]
+  (password-from-fields item))
 

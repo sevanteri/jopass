@@ -1,5 +1,4 @@
 ## 1Password cli wrappers
-(import process)
 (import json)
 (import ./json-utils :as "ju")
 (import ./configs :prefix "")
@@ -14,14 +13,15 @@
   Returns a new session token`
   [&opt shorthand]
   (default shorthand latest-signin)
-  # TODO: change to process/run
-  (if-with [f (file/popen
-                (string "gpg -qd "
-                        pw-file-path
-                        " | op signin " shorthand
-                        " --raw")
-                :r)]
-    (string/trim (file/read f :line))))
+  (let [gpg_proc (os/spawn ["gpg" "-qd" pw-file-path] :p {:out :pipe})
+        gpg_ret (:wait gpg_proc)]
+    (when (zero? gpg_ret)
+      (def op_proc (os/spawn
+                     ["op" "signin" "--account" shorthand "--raw"]
+                     :px
+                     {:in (gpg_proc :out) :out :pipe}))
+      (:wait op_proc)
+      (string/trim (:read (op_proc :out) :all)))))
 
 (defn token-valid?
   "Checks if the token is still valid. Returns a boolean."
@@ -52,38 +52,45 @@
   (maybe-renew-token (s/get-token shorthand) shorthand))
 
 (defn op [token shorthand & args]
-  (def out @"")
-  (def err @"")
-  (if (zero? (process/run ["op" "--cache --session" token
-                           "--account" shorthand
-                           ;args]
-                          :redirects [[stderr err] [stdout out]]))
-    (do
-      (os/touch last-use-path)
-      (json/decode out))
-    (if (token-err? err)
-      (op (get-new-token-and-save shorthand)
-          shorthand
-          ;args))))
+  (let [proc (os/spawn ["op" "--cache"
+                        "--format" "json"
+                        "--session" token
+                        "--account" shorthand
+                        ;(map string args)]
+                       :p
+                       {:out :pipe :err :pipe})] 
+    (if (zero? (:wait proc))
+      (let [out (:read (proc :out) :all)]
+        (do
+          (os/touch last-use-path)
+          (json/decode out)))
+      (let [err (:read (proc :err) :all)]
+        (if (token-err? err)
+          (op (get-new-token-and-save shorthand)
+              shorthand
+              ;args)
+          (do
+            (print err)
+            (os/exit 1)))))))
 
 
 (defn list-items [token shorthand]
- (op token shorthand :list :items "--categories=Password,Login"))
+ (op token shorthand :item :list "--categories=Password,Login"))
 
 (defn get-item [token shorthand name]
-  (op token shorthand :get :item name))
+  (op token shorthand :item :get name))
 
 (defn get-totp [token shorthand name]
-  (op token shorthand :get :totp name))
+  (ju/get-json-path "totp" (op token shorthand :item :get "--field" "type=otp" name)))
 
 (defn get-password [token shorthand name]
-  (ju/get-password (get-item token shorthand name)))
+  (ju/item-password (get-item token shorthand name)))
 
 (defn get-username [token shorthand name]
   (ju/username-from-fields (get-item token shorthand name)))
 
 (defn get-titles [token shorthand]
-  (sorted (map ju/overview-title (list-items token shorthand))))
+  (sorted (map ju/item-title (list-items token shorthand))))
 
 (defn check-shorthand [shorthand]
   (if (nil? (find (partial = shorthand) shorthands))
@@ -92,6 +99,6 @@
 
 (defn get-passwords [token &opt shorthand]
     (-?>> (list-items token shorthand)
-          (map ju/overview-title)
+          (map ju/item-title)
           (sorted)
           (map print)))
