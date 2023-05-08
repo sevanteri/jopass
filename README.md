@@ -1,3 +1,5 @@
+Archiving this as 1password cli has gotten so much better and usable. And the "security" of having your password manager's password encrypted on your disk is also questionable.
+
 # Jopass
 Wrapper for 1Password cli 2.0 `op` written in Janet-lang
 
